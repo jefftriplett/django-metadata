@@ -1,8 +1,9 @@
 import json
 
-from django.db import models
-from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
+from django.contrib.contenttypes.models import ContentType
+from django.db import models
+from django.utils.translation import ugettext_lazy as _
 
 
 class MetaDataManager(models.Manager):
@@ -12,7 +13,7 @@ class MetaDataManager(models.Manager):
         '''Return the value of metadata or None if not found'''
         try:
             return self.get_query_set().get(name=key).value
-        except MetaData.DoesNotExist as e:
+        except MetaData.DoesNotExist:
             return None
 
     def __setitem__(self, key, value):
@@ -20,7 +21,7 @@ class MetaDataManager(models.Manager):
             metadata = self.instance.metadata.get(name=key)
             metadata.value = value
             metadata.save()
-        except MetaData.DoesNotExist as e:
+        except MetaData.DoesNotExist:
             metadata = self.instance.metadata.create(name=key, value=value)
 
     def __contains__(self, key):
@@ -29,7 +30,7 @@ class MetaDataManager(models.Manager):
                 return True
             else:
                 return False
-        except IndexError as e:
+        except IndexError:
             return False
 
     def __iter__(self):
@@ -69,9 +70,9 @@ class MetaData(models.Model):
 
     objects = MetaDataManager()
 
-    def as_tuple(self):
-        '''Return a tuple in the format (name, value)'''
-        return (self.name, self.value)
+    class Meta:
+        verbose_name = _('Metadata')
+        verbose_name_plural = _('Metadatas')
 
     def __repr__(self):
         return json.dumps(dict(
@@ -80,3 +81,7 @@ class MetaData(models.Model):
             content_type=self.content_type.name,
             object_id=self.object_id,
         ))
+
+    def as_tuple(self):
+        '''Return a tuple in the format (name, value)'''
+        return (self.name, self.value)
